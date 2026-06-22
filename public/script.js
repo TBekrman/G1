@@ -75,10 +75,16 @@ const adminLogin = document.querySelector("[data-admin-login]");
 const adminStatus = document.querySelector("[data-admin-status]");
 const adminPanel = document.querySelector("[data-admin-panel]");
 const requestList = document.querySelector("[data-request-list]");
+const aiRequestForm = document.querySelector("[data-ai-request-form]");
+const aiStatus = document.querySelector("[data-ai-status]");
+const customerLogin = document.querySelector("[data-customer-login]");
+const customerStatus = document.querySelector("[data-customer-status]");
+const customerOrders = document.querySelector("[data-customer-orders]");
 
 let activeFilter = "todos";
 const cart = new Map();
 const improvementStorageKey = "yndra-improvement-requests";
+const orderStorageKey = "yndra-customer-orders";
 const adminSessionKey = "yndra-admin-session";
 const adminCredentials = {
   email: "g1@educacaoensa.com",
@@ -180,6 +186,18 @@ function saveRequests(requests) {
   localStorage.setItem(improvementStorageKey, JSON.stringify(requests));
 }
 
+function loadOrders() {
+  try {
+    return JSON.parse(localStorage.getItem(orderStorageKey)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOrders(orders) {
+  localStorage.setItem(orderStorageKey, JSON.stringify(orders));
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -195,8 +213,29 @@ function createAssistantSummary(request) {
     `Área afetada: ${request.area}.`,
     `Prioridade: ${request.priority}.`,
     `Resumo: ${request.description}`,
-    "Próximo passo: revisar o pedido, editar o código, testar e publicar com Firebase Hosting."
+    `Aprovação: ${request.status}.`,
+    "Próximo passo: transformar em alteração de código, testar e publicar com Firebase Hosting."
   ].join("\n");
+}
+
+function createAiPlan(prompt) {
+  const lowerPrompt = prompt.toLowerCase();
+  const area = lowerPrompt.includes("produto") || lowerPrompt.includes("camisa")
+    ? "Produtos"
+    : lowerPrompt.includes("pedido") || lowerPrompt.includes("compra")
+      ? "Pedido"
+      : lowerPrompt.includes("cor") || lowerPrompt.includes("visual")
+        ? "Visual"
+        : "Admin";
+
+  return {
+    area,
+    title: prompt.length > 70 ? `${prompt.slice(0, 70)}...` : prompt,
+    description: [
+      `Solicitação criada pelo administrador: ${prompt}`,
+      "Plano da IA: localizar a seção afetada, alterar HTML/CSS/JS, validar no navegador e publicar uma nova versão."
+    ].join(" ")
+  };
 }
 
 function renderAdminRequests() {
@@ -221,6 +260,7 @@ function renderAdminRequests() {
             <span>${escapeHtml(request.area)}</span>
             <span>${escapeHtml(request.priority)}</span>
             <span>${escapeHtml(request.name)}</span>
+            <span>${escapeHtml(request.source || "Visitante")}</span>
             <span>${escapeHtml(request.date)}</span>
           </div>
           <p>${escapeHtml(request.description)}</p>
@@ -234,6 +274,43 @@ function renderAdminRequests() {
       `
     )
     .join("");
+}
+
+function renderCustomerOrders(whatsapp) {
+  if (!customerOrders) return;
+
+  const normalizedWhatsapp = normalizePhone(whatsapp);
+  const orders = loadOrders().filter((order) => normalizePhone(order.whatsapp) === normalizedWhatsapp);
+
+  if (!orders.length) {
+    customerOrders.innerHTML = '<p class="empty-cart">Nenhum pedido encontrado para este WhatsApp.</p>';
+    return;
+  }
+
+  customerOrders.innerHTML = orders
+    .map(
+      (order) => `
+        <article class="request-card">
+          <header>
+            <h4>Pedido ${escapeHtml(order.id)}</h4>
+            <span class="request-pill">${escapeHtml(order.status)}</span>
+          </header>
+          <div class="request-meta">
+            <span>${escapeHtml(order.name)}</span>
+            <span>${escapeHtml(order.city)}</span>
+            <span>${escapeHtml(order.date)}</span>
+            <span>${escapeHtml(order.total)}</span>
+          </div>
+          <p>${escapeHtml(order.items.map((item) => `${item.quantity}x ${item.name}`).join(", "))}</p>
+          <p>${escapeHtml(order.notes || "Sem observações.")}</p>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function normalizePhone(phone) {
+  return String(phone || "").replace(/\D/g, "");
 }
 
 function setAdminSession(isLoggedIn) {
@@ -283,9 +360,34 @@ checkoutForm.addEventListener("submit", (event) => {
 
   const data = new FormData(checkoutForm);
   const name = data.get("nome");
+  const whatsapp = data.get("whatsapp");
+  const city = data.get("cidade");
+  const payment = data.get("pagamento");
+  const notes = data.get("observacoes");
   const total = cartTotal.textContent;
+  const order = {
+    id: `YNDRA-${Date.now().toString().slice(-6)}`,
+    name,
+    whatsapp,
+    city,
+    payment,
+    notes,
+    total,
+    status: "Recebido",
+    date: new Date().toLocaleDateString("pt-BR"),
+    items: [...cart.values()].map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity
+    }))
+  };
 
-  formStatus.textContent = `Pedido recebido, ${name}! Total: ${total}. Entraremos em contato pelo WhatsApp.`;
+  const orders = loadOrders();
+  orders.unshift(order);
+  saveOrders(orders);
+
+  formStatus.textContent = `Pedido ${order.id} recebido, ${name}! Total: ${total}. Você pode consultar pelo WhatsApp informado.`;
   formStatus.className = "form-status is-success";
   checkoutForm.reset();
   cart.clear();
@@ -304,7 +406,8 @@ improvementForm.addEventListener("submit", (event) => {
     priority: data.get("prioridade"),
     title: data.get("titulo"),
     description: data.get("descricao"),
-    status: "Recebido",
+    status: "Aprovado automaticamente",
+    source: "Visitante",
     date: new Date().toLocaleDateString("pt-BR")
   };
 
@@ -315,9 +418,40 @@ improvementForm.addEventListener("submit", (event) => {
   saveRequests(requests);
 
   assistantPreview.textContent = request.summary;
-  improvementStatus.textContent = "Melhoria enviada para revisão do administrador.";
+  improvementStatus.textContent = "Melhoria aprovada automaticamente e enviada para a fila do administrador.";
   improvementStatus.className = "form-status is-success";
   improvementForm.reset();
+  renderAdminRequests();
+});
+
+aiRequestForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const data = new FormData(aiRequestForm);
+  const prompt = data.get("prompt");
+  const plan = createAiPlan(prompt);
+  const request = {
+    id: crypto.randomUUID(),
+    name: "Administrador",
+    email: adminCredentials.email,
+    area: plan.area,
+    priority: "Alta",
+    title: plan.title,
+    description: plan.description,
+    status: "Aprovado automaticamente",
+    source: "IA restrita",
+    date: new Date().toLocaleDateString("pt-BR")
+  };
+
+  request.summary = createAssistantSummary(request);
+
+  const requests = loadRequests();
+  requests.unshift(request);
+  saveRequests(requests);
+
+  aiStatus.textContent = "Solicitação criada pela IA e aprovada automaticamente.";
+  aiStatus.className = "form-status is-success";
+  aiRequestForm.reset();
   renderAdminRequests();
 });
 
@@ -337,6 +471,16 @@ adminLogin.addEventListener("submit", (event) => {
 
   adminStatus.textContent = "E-mail ou senha incorretos.";
   adminStatus.className = "form-status is-error";
+});
+
+customerLogin.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const data = new FormData(customerLogin);
+  const whatsapp = data.get("whatsapp");
+  renderCustomerOrders(whatsapp);
+  customerStatus.textContent = "Consulta realizada.";
+  customerStatus.className = "form-status is-success";
 });
 
 document.addEventListener("click", (event) => {

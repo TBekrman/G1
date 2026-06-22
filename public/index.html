@@ -28,6 +28,7 @@
         <a href="#melhorias">Melhorias</a>
         <a href="#destaques">Destaques</a>
         <a href="#pedido">Pedido</a>
+        <a href="#cliente">Meus pedidos</a>
         <a href="#admin">Admin</a>
       </nav>
 
@@ -110,7 +111,7 @@
       <section class="section improvement-section" id="melhorias">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Codex de melhorias</p>
+            <p class="eyebrow">Melhorias automáticas</p>
             <h2>Peça uma melhoria para o site</h2>
           </div>
           <p>Envie ideias de novas telas, produtos, textos, cores ou ajustes para a loja.</p>
@@ -166,8 +167,8 @@
             <p class="eyebrow">Triagem</p>
             <h3>Resumo automático</h3>
             <p data-assistant-preview>
-              Assim que uma ideia for enviada, o site organiza a solicitação para o administrador
-              revisar e aplicar no próximo deploy.
+              Assim que uma ideia for enviada, ela será aprovada automaticamente e organizada
+              para entrar na fila de alteração do site.
             </p>
           </aside>
         </div>
@@ -205,9 +206,22 @@
               <button class="secondary-action" type="button" data-admin-logout>Sair</button>
             </div>
             <p class="security-note">
-              Este painel registra pedidos de melhoria. Deploy automático exige backend protegido e
-              aprovação do administrador.
+              As solicitações são aprovadas automaticamente. Para uma IA real editar código e fazer
+              deploy sozinha, é necessário backend protegido com chaves privadas.
             </p>
+            <form class="ai-workbench" data-ai-request-form>
+              <label>
+                Pedido para a IA
+                <textarea
+                  name="prompt"
+                  rows="4"
+                  placeholder="Ex: crie uma busca por nome do time e destaque camisas em promoção"
+                  required
+                ></textarea>
+              </label>
+              <button class="submit-order" type="submit">Gerar solicitação aprovada</button>
+              <p class="form-status" data-ai-status role="status"></p>
+            </form>
             <div class="request-list" data-request-list></div>
           </div>
         </div>
@@ -251,6 +265,30 @@
           <button class="submit-order" type="submit">Finalizar pedido</button>
           <p class="form-status" data-form-status role="status"></p>
         </form>
+      </section>
+
+      <section class="section customer-section" id="cliente">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Área do comprador</p>
+            <h2>Consultar meus pedidos</h2>
+          </div>
+          <p>Digite o WhatsApp usado na compra para ver seus pedidos salvos neste dispositivo.</p>
+        </div>
+
+        <div class="customer-layout">
+          <form class="customer-login" data-customer-login>
+            <label>
+              WhatsApp do pedido
+              <input name="whatsapp" type="tel" placeholder="(00) 00000-0000" required />
+            </label>
+            <button class="submit-order" type="submit">Consultar</button>
+            <p class="form-status" data-customer-status role="status"></p>
+          </form>
+          <div class="customer-orders" data-customer-orders>
+            <p class="empty-cart">Nenhuma consulta feita ainda.</p>
+          </div>
+        </div>
       </section>
     </main>
 
