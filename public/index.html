@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="YNDRA Camisas: loja de camisas de time nacionais, internacionais, retrô e edição especial."
+    />
+    <title>YNDRA Camisas | Loja de camisas de time</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="YNDRA Camisas">
+        <span class="brand-mark">Y</span>
+        <span>YNDRA Camisas</span>
+      </a>
+
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a href="#produtos">Camisas</a>
+        <a href="#destaques">Destaques</a>
+        <a href="#pedido">Pedido</a>
+      </nav>
+
+      <button class="cart-button" type="button" data-cart-open aria-label="Abrir carrinho">
+        Carrinho
+        <span data-cart-count>0</span>
+      </button>
+    </header>
+
+    <main id="inicio">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Loja online de camisas de time</p>
+          <h1>YNDRA Camisas</h1>
+          <p>
+            Camisas nacionais, internacionais, retrô e edições especiais para quem vive futebol
+            dentro e fora do estádio.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#produtos">Ver camisas</a>
+            <a class="secondary-link" href="#pedido">Montar pedido</a>
+          </div>
+        </div>
+
+        <div class="hero-showcase" aria-label="Camisas em destaque">
+          <img src="assets/camisa-brasil.svg" alt="Camisa Brasil 1998" />
+          <img src="assets/camisa-argentina.svg" alt="Camisa Argentina clássica" />
+          <img src="assets/camisa-europa.svg" alt="Camisa Europa edição noite" />
+        </div>
+      </section>
+
+      <section class="trust-band" aria-label="Vantagens da loja">
+        <div>
+          <strong>Entrega rápida</strong>
+          <span>Envio para todo o Brasil</span>
+        </div>
+        <div>
+          <strong>Troca fácil</strong>
+          <span>7 dias para ajustar tamanho</span>
+        </div>
+        <div>
+          <strong>Pedido seguro</strong>
+          <span>Resumo antes de finalizar</span>
+        </div>
+      </section>
+
+      <section class="section" id="produtos">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Vitrine</p>
+            <h2>Escolha sua camisa</h2>
+          </div>
+          <div class="filters" aria-label="Filtros de camisas">
+            <button class="filter is-active" type="button" data-filter="todos">Todos</button>
+            <button class="filter" type="button" data-filter="nacional">Nacionais</button>
+            <button class="filter" type="button" data-filter="internacional">Internacionais</button>
+            <button class="filter" type="button" data-filter="retro">Retrô</button>
+          </div>
+        </div>
+
+        <div class="product-grid" data-products></div>
+      </section>
+
+      <section class="feature-band" id="destaques">
+        <div class="feature-copy">
+          <p class="eyebrow">Destaque da semana</p>
+          <h2>Camisas com visual de jogo e acabamento premium.</h2>
+          <p>
+            Modelos pensados para presentear, colecionar ou usar no dia de jogo. Escolha o tamanho,
+            adicione ao carrinho e finalize seu pedido em poucos cliques.
+          </p>
+        </div>
+        <div class="feature-metrics">
+          <div><strong>6</strong><span>modelos</span></div>
+          <div><strong>P ao GG</strong><span>tamanhos</span></div>
+          <div><strong>R$ 99</strong><span>a partir de</span></div>
+        </div>
+      </section>
+
+      <section class="section order-section" id="pedido">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Finalização</p>
+            <h2>Dados do pedido</h2>
+          </div>
+          <p>Preencha seus dados depois de adicionar pelo menos uma camisa ao carrinho.</p>
+        </div>
+
+        <form class="checkout-form" data-checkout>
+          <label>
+            Nome
+            <input name="nome" type="text" placeholder="Seu nome" required />
+          </label>
+          <label>
+            WhatsApp
+            <input name="whatsapp" type="tel" placeholder="(00) 00000-0000" required />
+          </label>
+          <label>
+            Cidade
+            <input name="cidade" type="text" placeholder="Sua cidade" required />
+          </label>
+          <label>
+            Forma de pagamento
+            <select name="pagamento" required>
+              <option value="">Selecione</option>
+              <option>Pix</option>
+              <option>Cartão</option>
+              <option>Dinheiro na entrega</option>
+            </select>
+          </label>
+          <label class="full-field">
+            Observações
+            <textarea name="observacoes" rows="4" placeholder="Tamanho, número, nome na camisa..."></textarea>
+          </label>
+          <button class="submit-order" type="submit">Finalizar pedido</button>
+          <p class="form-status" data-form-status role="status"></p>
+        </form>
+      </section>
+    </main>
+
+    <aside class="cart-drawer" data-cart-drawer aria-label="Carrinho de compras">
+      <div class="cart-panel">
+        <div class="cart-header">
+          <div>
+            <p class="eyebrow">Seu pedido</p>
+            <h2>Carrinho</h2>
+          </div>
+          <button class="icon-button" type="button" data-cart-close aria-label="Fechar carrinho">x</button>
+        </div>
+        <div class="cart-items" data-cart-items></div>
+        <div class="cart-summary">
+          <span>Total</span>
+          <strong data-cart-total>R$ 0,00</strong>
+        </div>
+        <a class="primary-link cart-checkout" href="#pedido" data-cart-close>Ir para pedido</a>
+      </div>
+    </aside>
+
+    <footer class="site-footer">
+      <strong>YNDRA Camisas</strong>
+      <span>Projeto escolar de loja online conectado ao Firebase Hosting.</span>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
