@@ -68,9 +68,22 @@ const cartTotal = document.querySelector("[data-cart-total]");
 const cartCount = document.querySelector("[data-cart-count]");
 const checkoutForm = document.querySelector("[data-checkout]");
 const formStatus = document.querySelector("[data-form-status]");
+const improvementForm = document.querySelector("[data-improvement-form]");
+const improvementStatus = document.querySelector("[data-improvement-status]");
+const assistantPreview = document.querySelector("[data-assistant-preview]");
+const adminLogin = document.querySelector("[data-admin-login]");
+const adminStatus = document.querySelector("[data-admin-status]");
+const adminPanel = document.querySelector("[data-admin-panel]");
+const requestList = document.querySelector("[data-request-list]");
 
 let activeFilter = "todos";
 const cart = new Map();
+const improvementStorageKey = "yndra-improvement-requests";
+const adminSessionKey = "yndra-admin-session";
+const adminCredentials = {
+  email: "g1@educacaoensa.com",
+  password: "g1.123"
+};
 
 function renderProducts() {
   const visibleProducts =
@@ -155,6 +168,86 @@ function changeQuantity(id, delta) {
   renderCart();
 }
 
+function loadRequests() {
+  try {
+    return JSON.parse(localStorage.getItem(improvementStorageKey)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRequests(requests) {
+  localStorage.setItem(improvementStorageKey, JSON.stringify(requests));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function createAssistantSummary(request) {
+  return [
+    `Pedido: ${request.title}`,
+    `Área afetada: ${request.area}.`,
+    `Prioridade: ${request.priority}.`,
+    `Resumo: ${request.description}`,
+    "Próximo passo: revisar o pedido, editar o código, testar e publicar com Firebase Hosting."
+  ].join("\n");
+}
+
+function renderAdminRequests() {
+  if (!requestList) return;
+
+  const requests = loadRequests();
+
+  if (!requests.length) {
+    requestList.innerHTML = '<p class="empty-cart">Nenhuma melhoria foi enviada ainda.</p>';
+    return;
+  }
+
+  requestList.innerHTML = requests
+    .map(
+      (request) => `
+        <article class="request-card">
+          <header>
+            <h4>${escapeHtml(request.title)}</h4>
+            <span class="request-pill">${escapeHtml(request.status)}</span>
+          </header>
+          <div class="request-meta">
+            <span>${escapeHtml(request.area)}</span>
+            <span>${escapeHtml(request.priority)}</span>
+            <span>${escapeHtml(request.name)}</span>
+            <span>${escapeHtml(request.date)}</span>
+          </div>
+          <p>${escapeHtml(request.description)}</p>
+          <p>${escapeHtml(request.summary).replaceAll("\n", "<br />")}</p>
+          <div class="request-actions">
+            <button type="button" data-request-status="${request.id}" data-status="Em análise">Em análise</button>
+            <button type="button" data-request-status="${request.id}" data-status="Pronto para deploy">Pronto</button>
+            <button type="button" data-request-remove="${request.id}">Remover</button>
+          </div>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function setAdminSession(isLoggedIn) {
+  if (isLoggedIn) {
+    sessionStorage.setItem(adminSessionKey, "true");
+  } else {
+    sessionStorage.removeItem(adminSessionKey);
+  }
+
+  if (adminPanel) adminPanel.hidden = !isLoggedIn;
+  if (adminLogin) adminLogin.hidden = isLoggedIn;
+  if (isLoggedIn) renderAdminRequests();
+}
+
 filters.forEach((button) => {
   button.addEventListener("click", () => {
     activeFilter = button.dataset.filter;
@@ -199,5 +292,78 @@ checkoutForm.addEventListener("submit", (event) => {
   renderCart();
 });
 
+improvementForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const data = new FormData(improvementForm);
+  const request = {
+    id: crypto.randomUUID(),
+    name: data.get("nome"),
+    email: data.get("email"),
+    area: data.get("area"),
+    priority: data.get("prioridade"),
+    title: data.get("titulo"),
+    description: data.get("descricao"),
+    status: "Recebido",
+    date: new Date().toLocaleDateString("pt-BR")
+  };
+
+  request.summary = createAssistantSummary(request);
+
+  const requests = loadRequests();
+  requests.unshift(request);
+  saveRequests(requests);
+
+  assistantPreview.textContent = request.summary;
+  improvementStatus.textContent = "Melhoria enviada para revisão do administrador.";
+  improvementStatus.className = "form-status is-success";
+  improvementForm.reset();
+  renderAdminRequests();
+});
+
+adminLogin.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const data = new FormData(adminLogin);
+  const email = data.get("email");
+  const password = data.get("senha");
+
+  if (email === adminCredentials.email && password === adminCredentials.password) {
+    adminStatus.textContent = "";
+    adminLogin.reset();
+    setAdminSession(true);
+    return;
+  }
+
+  adminStatus.textContent = "E-mail ou senha incorretos.";
+  adminStatus.className = "form-status is-error";
+});
+
+document.addEventListener("click", (event) => {
+  const statusButton = event.target.closest("[data-request-status]");
+  const removeButton = event.target.closest("[data-request-remove]");
+
+  if (event.target.closest("[data-admin-logout]")) {
+    setAdminSession(false);
+  }
+
+  if (statusButton) {
+    const requests = loadRequests().map((request) =>
+      request.id === statusButton.dataset.requestStatus
+        ? { ...request, status: statusButton.dataset.status }
+        : request
+    );
+    saveRequests(requests);
+    renderAdminRequests();
+  }
+
+  if (removeButton) {
+    const requests = loadRequests().filter((request) => request.id !== removeButton.dataset.requestRemove);
+    saveRequests(requests);
+    renderAdminRequests();
+  }
+});
+
 renderProducts();
 renderCart();
+setAdminSession(sessionStorage.getItem(adminSessionKey) === "true");
